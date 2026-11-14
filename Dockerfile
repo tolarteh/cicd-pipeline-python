@@ -6,12 +6,13 @@ FROM python:3.13-slim
 WORKDIR /app
 
 # Copia solo el archivo de requerimientos primero para aprovechar el cache de Docker
-COPY requirements.txt .
+COPY requirements-lock.txt .
 
 # Instala solo las dependencias de ejecución (Flask y Gunicorn)
 # Usa --no-cache-dir para reducir el tamaño de la imagen
 # --require-hashes obliga a usar versiones fijadas (==) con hashes verificados
-RUN pip install --no-cache-dir --require-hashes -r requirements.txt
+# --only-binary :all: evita compilar paquetes desde código fuente (no ejecuta setup.py)
+RUN python -m pip install --no-cache-dir --require-hashes --only-binary :all: -r requirements-lock.txt
 
 # Copia el código de la aplicación (solo la carpeta app)
 COPY app/ ./app/
