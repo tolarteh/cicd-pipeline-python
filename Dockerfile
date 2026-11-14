@@ -14,8 +14,15 @@ COPY requirements-lock.txt .
 # --only-binary :all: evita compilar paquetes desde código fuente (no ejecuta setup.py)
 RUN python -m pip install --no-cache-dir --require-hashes --only-binary :all: -r requirements-lock.txt
 
+# Crea un usuario sin privilegios para ejecutar la aplicación
+RUN groupadd --system nonroot \
+    && useradd --system --gid nonroot --no-create-home --shell /usr/sbin/nologin nonroot
+
 # Copia el código de la aplicación (solo la carpeta app)
-COPY app/ ./app/
+COPY --chown=root:root app/ ./app/
+
+# Ejecuta el contenedor como usuario no root
+USER nonroot
 
 # Expón el puerto en el que Gunicorn servirá la aplicación
 # Gunicorn por defecto usa 8000, así que usaremos ese.
