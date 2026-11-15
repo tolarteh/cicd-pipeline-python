@@ -11,7 +11,7 @@ def sumar(a, b):
 
 
 def restar(a, b):
-    return a + b  # FIXME: Error intencional
+    return a - b
 
 
 def multiplicar(a, b):
