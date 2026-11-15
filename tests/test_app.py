@@ -2,48 +2,56 @@
 import pytest
 from app.app import app
 
+
 @pytest.fixture
 def client():
-    app.config['TESTING'] = True
+    app.config["TESTING"] = True
     with app.test_client() as client:
         yield client
 
+
 def test_index_get(client):
-    response = client.get('/')
+    response = client.get("/")
     assert response.status_code == 200
-    assert b'<!DOCTYPE html>' in response.data  # Assuming the HTML template starts with <!DOCTYPE html>
+    assert b"<!DOCTYPE html>" in response.data
 
-def test_index_post_sumar(client):
-    response = client.post('/', data={'num1': '2', 'num2': '3', 'operacion': 'sumar'})
-    assert response.status_code == 200
-    assert b'Resultado: 5.0' in response.data
 
-def test_index_post_restar(client):
-    response = client.post('/', data={'num1': '5', 'num2': '3', 'operacion': 'restar'})
+@pytest.mark.parametrize(
+    "operacion, num1, num2, esperado",
+    [
+        pytest.param("sumar", "2", "3", b"Resultado: 5.0", id="sumar"),
+        pytest.param("restar", "5", "3", b"Resultado: 2.0", id="restar"),
+        pytest.param("multiplicar", "2", "3", b"Resultado: 6.0", id="multiplicar"),
+        pytest.param("dividir", "6", "3", b"Resultado: 2.0", id="dividir"),
+    ],
+)
+def test_index_post_operaciones(client, operacion, num1, num2, esperado):
+    response = client.post(
+        "/", data={"num1": num1, "num2": num2, "operacion": operacion}
+    )
     assert response.status_code == 200
-    assert b'Resultado: 2.0' in response.data
+    assert esperado in response.data
 
-def test_index_post_multiplicar(client):
-    response = client.post('/', data={'num1': '2', 'num2': '3', 'operacion': 'multiplicar'})
-    assert response.status_code == 200
-    assert b'Resultado: 6.0' in response.data
-
-def test_index_post_dividir(client):
-    response = client.post('/', data={'num1': '6', 'num2': '3', 'operacion': 'dividir'})
-    assert response.status_code == 200
-    assert b'Resultado: 2.0' in response.data
 
 def test_index_post_dividir_by_zero(client):
-    response = client.post('/', data={'num1': '6', 'num2': '0', 'operacion': 'dividir'})
+    response = client.post("/", data={"num1": "6", "num2": "0", "operacion": "dividir"})
     assert response.status_code == 200
-    assert b'Error: No se puede dividir por cero' in response.data
+    assert b"Error: No se puede dividir por cero" in response.data
+
 
 def test_index_post_invalid_operation(client):
-    response = client.post('/', data={'num1': '6', 'num2': '3', 'operacion': 'invalid'})
+    response = client.post("/", data={"num1": "6", "num2": "3", "operacion": "invalid"})
     assert response.status_code == 200
-    assert b'Operaci\xc3\xb3n no v\xc3\xa1lida' in response.data
+    assert b"Operaci\xc3\xb3n no v\xc3\xa1lida" in response.data
+
 
 def test_index_post_invalid_numbers(client):
-    response = client.post('/', data={'num1': 'a', 'num2': 'b', 'operacion': 'sumar'})
+    response = client.post("/", data={"num1": "a", "num2": "b", "operacion": "sumar"})
     assert response.status_code == 200
-    assert b'Error: Introduce n\xc3\xbameros v\xc3\xa1lidos' in response.data
+    assert b"Error: Introduce n\xc3\xbameros v\xc3\xa1lidos" in response.data
+
+
+def test_index_post_valid_first_invalid_second_number(client):
+    response = client.post("/", data={"num1": "2", "num2": "abc", "operacion": "sumar"})
+    assert response.status_code == 200
+    assert b"Error: Introduce n\xc3\xbameros v\xc3\xa1lidos" in response.data
